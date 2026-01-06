@@ -28,7 +28,7 @@ const App: React.FC = () => {
   useEffect(() => {
     const unsubscribe = auth.onAuthStateChanged(async (currentUser) => {
       setUser(currentUser);
-            setIsAdmin(currentUser.email === 'majkelaio1@gmail.com');
+            setIsAdmin(currentUser?.email === 'majkelaio1@gmail.com');
       
       if (currentUser) {
         // User logged in -> Load data from Firestore
