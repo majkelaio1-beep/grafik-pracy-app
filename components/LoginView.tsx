@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { signInWithEmailAndPassword } from 'firebase/auth';
+import { signInWithEmailAndPassword, createUserWithEmailAndPassword } from 'firebase/auth';
 import { auth } from '../firebase';
 import { Lock, Mail } from 'lucide-react';
 
@@ -8,19 +8,44 @@ const LoginView: React.FC = () => {
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [success, setSuccess] = useState<string | null>(null);
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
     setError(null);
+    setSuccess(null);
     
     try {
       await signInWithEmailAndPassword(auth, email, password);
-      // Auth state listener in App.tsx will handle the rest
     } catch (err: any) {
       console.error(err);
-      setError(`Error: ${err.code || 'unknown'} - ${err.message || 'No message'}`);        setError('Nieprawidłowy email lub hasło');
-              setLoading(false);      
+      setError('Nieprawidłowy email lub hasło');
+      setLoading(false);
+    }
+  };
+
+  const handleCreateAdmin = async () => {
+    setLoading(true);
+    setError(null);
+    setSuccess(null);
+    
+    try {
+      await createUserWithEmailAndPassword(auth, 'majkelaio1@gmail.com', 'admin123');
+      setSuccess('Konto administratora utworzone! Możesz się teraz zalogować.');
+      setEmail('majkelaio1@gmail.com');
+      setPassword('admin123');
+      setLoading(false);
+    } catch (err: any) {
+      console.error(err);
+      if (err.code === 'auth/email-already-in-use') {
+        setError('Konto już istnieje. Użyj email: majkelaio1@gmail.com, hasło: admin123');
+        setEmail('majkelaio1@gmail.com');
+        setPassword('admin123');
+      } else {
+        setError('Błąd podczas tworzenia konta: ' + err.message);
+      }
+      setLoading(false);
     }
   };
 
@@ -91,12 +116,25 @@ const LoginView: React.FC = () => {
           </button>
         </form>
 
+        <div className="mt-4">
+          <button
+            onClick={handleCreateAdmin}
+            disabled={loading}
+            className="w-full bg-gray-100 hover:bg-gray-200 text-gray-700 font-medium py-3 px-6 rounded-xl transition-all active:scale-95 disabled:opacity-70 disabled:cursor-not-allowed text-sm"
+          >
+            Utwórz konto administratora
+          </button>
+        </div>
+
         {error && (
           <p className="mt-4 text-xs font-bold text-rose-500 bg-rose-50 p-2 rounded-lg">{error}</p>
         )}
+        {success && (
+          <p className="mt-4 text-xs font-bold text-green-500 bg-green-50 p-2 rounded-lg">{success}</p>
+        )}
       </div>
 
-      <p className="mt-8 text-[10px] text-gray-300">Wersja v2.1 (Email/Password)</p>
+      <p className="mt-8 text-[10px] text-gray-300">Wersja v2.2 (Email/Password + Registration)</p>
     </div>
   );
 };
