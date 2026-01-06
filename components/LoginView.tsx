@@ -9,6 +9,7 @@ const LoginView: React.FC = () => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
+  const [isRegistering, setIsRegistering] = useState(false);
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -25,23 +26,33 @@ const LoginView: React.FC = () => {
     }
   };
 
-  const handleCreateAdmin = async () => {
+  const handleRegister = async () => {
+    if (!email || !password) {
+      setError('Wprowadź email i hasło');
+      return;
+    }
+    
+    if (password.length < 6) {
+      setError('Hasło musi mieć minimum 6 znaków');
+      return;
+    }
+
     setLoading(true);
     setError(null);
     setSuccess(null);
     
     try {
-      await createUserWithEmailAndPassword(auth, 'majkelaio1@gmail.com', 'admin123');
-      setSuccess('Konto administratora utworzone! Możesz się teraz zalogować.');
-      setEmail('majkelaio1@gmail.com');
-      setPassword('admin123');
+      await createUserWithEmailAndPassword(auth, email, password);
+      setSuccess('Konto utworzone! Zostałeś automatycznie zalogowany.');
       setLoading(false);
     } catch (err: any) {
       console.error(err);
       if (err.code === 'auth/email-already-in-use') {
-        setError('Konto już istnieje. Użyj email: majkelaio1@gmail.com, hasło: admin123');
-        setEmail('majkelaio1@gmail.com');
-        setPassword('admin123');
+        setError('Ten email jest już zarejestrowany');
+      } else if (err.code === 'auth/invalid-email') {
+        setError('Nieprawidłowy adres email');
+      } else if (err.code === 'auth/weak-password') {
+        setError('Hasło jest zbyt słabe');
       } else {
         setError('Błąd podczas tworzenia konta: ' + err.message);
       }
@@ -118,11 +129,11 @@ const LoginView: React.FC = () => {
 
         <div className="mt-4">
           <button
-            onClick={handleCreateAdmin}
+            onClick={handleRegister}
             disabled={loading}
             className="w-full bg-gray-100 hover:bg-gray-200 text-gray-700 font-medium py-3 px-6 rounded-xl transition-all active:scale-95 disabled:opacity-70 disabled:cursor-not-allowed text-sm"
           >
-            Utwórz konto administratora
+            Utwórz konto
           </button>
         </div>
 
@@ -134,7 +145,7 @@ const LoginView: React.FC = () => {
         )}
       </div>
 
-      <p className="mt-8 text-[10px] text-gray-300">Wersja v2.2 (Email/Password + Registration)</p>
+      <p className="mt-8 text-[10px] text-gray-300">Wersja v2.3 (Multi-User System)</p>
     </div>
   );
 };
