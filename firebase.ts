@@ -7,12 +7,12 @@ import { getFirestore } from 'firebase/firestore';
 // Wejdź na: Project Settings -> General -> Your apps -> SDK setup and configuration
 // ------------------------------------------------------------------
 const firebaseConfig = {
-  apiKey: "TU_WKLEJ_SWOJE_API_KEY",
-  authDomain: "twoj-projekt.firebaseapp.com",
-  projectId: "twoj-projekt",
-  storageBucket: "twoj-projekt.appspot.com",
-  messagingSenderId: "123456789",
-  appId: "1:123456789:web:abcdef"
+  apiKey: "AIzaSyCcykfW3oVqiSBt-DV-M9uxpqtsXs_b3s",
+  authDomain: "grafik-pracy-app-2d9ad.firebaseapp.com",
+  projectId: "grafik-pracy-app-2d9ad",
+  storageBucket: "grafik-pracy-app-2d9ad.firebasestorage.app",
+  messagingSenderId: "876289612078",
+  appId: "1:876289612078:web:de9d9610d7fae2defbc2bf"
 };
 
 // Initialize Firebase
