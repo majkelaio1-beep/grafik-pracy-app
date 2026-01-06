@@ -10,7 +10,7 @@ import { generateScheduleData } from './constants';
 import { AlertCircle } from 'lucide-react';
 import { ScheduleItem } from './types';
 import { auth, db } from './firebase';
-import { doc, getDoc, setDoc } from 'firebase/firestore';
+import { doc, getDoc, setDoc, updateDoc } from 'firebase/firestore';
 
 const App: React.FC = () => {
   const [user, setUser] = useState<any>(null);
