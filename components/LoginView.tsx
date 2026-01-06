@@ -1,5 +1,5 @@
-import React, { useState, useEffect } from 'react';
-import { signInWithRedirect, getRedirectResult } from 'firebase/auth';
+import React, { useState } from 'react';
+import { signInWithPopup } from 'firebase/auth';
 import { auth, googleProvider } from '../firebase';
 import { Lock, ArrowRight } from 'lucide-react';
 
@@ -7,29 +7,12 @@ const LoginView: React.FC = () => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  // Check for redirect result on component mount
-  useEffect(() => {
-    const checkRedirectResult = async () => {
-      try {
-        const result = await getRedirectResult(auth);
-        if (result) {
-          // Successfully signed in
-          console.log('User signed in:', result.user);
-        }
-      } catch (err: any) {
-        console.error('Redirect error:', err);
-        setError("Wystąpił błąd podczas logowania. Sprawdź konfigurację Firebase lub spróbuj ponownie.");
-      }
-    };
-    checkRedirectResult();
-  }, []);
-
   const handleLogin = async () => {
     setLoading(true);
     setError(null);
     try {
-      await signInWithRedirect(auth, googleProvider);
-      // The page will redirect, so code below won't execute
+      await signInWithPopup(auth, googleProvider);
+      // Auth state listener in App.tsx will handle the rest
     } catch (err: any) {
       console.error(err);
       setError("Wystąpił błąd podczas logowania. Sprawdź konfigurację Firebase lub spróbuj ponownie.");
