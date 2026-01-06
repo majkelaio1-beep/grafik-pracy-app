@@ -1,191 +1,220 @@
 import React, { useState, useEffect } from 'react';
-import { collection, getDocs, doc, updateDoc } from 'firebase/firestore';
+import { collection, getDocs, doc, updateDoc, deleteDoc } from 'firebase/firestore';
 import { db } from '../firebase';
 import { ScheduleItem } from '../types';
-import { Users, ArrowLeft, Save } from 'lucide-react';
-import ScheduleCard from './ScheduleCard';
+import { Users, Calendar, Clock, TrendingUp, UserCheck, Edit, Trash2, RefreshCw } from 'lucide-react';
 
 interface User {
-  uid: string;
-  displayName: string;
+  id: string;
   email: string;
-  role: string;
-  schedule: ScheduleItem[];
+  schedule?: ScheduleItem[];
+  createdAt?: string;
 }
 
 interface AdminDashboardProps {
-  onBack: () => void;
+  allUsers: User[];
+  onRefresh: () => void;
 }
 
-const AdminDashboard: React.FC<AdminDashboardProps> = ({ onBack }) => {
-  const [users, setUsers] = useState<User[]>([]);
+const AdminDashboard: React.FC<AdminDashboardProps> = ({ allUsers, onRefresh }) => {
   const [selectedUser, setSelectedUser] = useState<User | null>(null);
-  const [editedSchedule, setEditedSchedule] = useState<ScheduleItem[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [saving, setSaving] = useState(false);
+  const [loading, setLoading] = useState(false);
 
-  useEffect(() => {
-    loadUsers();
-  }, []);
+  // Calculate statistics
+  const totalUsers = allUsers.length;
+  const usersWithSchedules = allUsers.filter(u => u.schedule && u.schedule.length > 0).length;
+  
+  const totalHours = allUsers.reduce((sum, user) => {
+    if (!user.schedule) return sum;
+    return sum + user.schedule.reduce((userSum, item) => {
+      const hours = parseFloat(item.hours) || 0;
+      return userSum + hours;
+    }, 0);
+  }, 0);
 
-  const loadUsers = async () => {
-    try {
-      const usersCollection = collection(db, 'users');
-      const usersSnapshot = await getDocs(usersCollection);
-      const usersList: User[] = [];
-      
-      usersSnapshot.forEach((doc) => {
-        const data = doc.data();
-        usersList.push({
-          uid: doc.id,
-          displayName: data.displayName || 'Bez nazwy',
-          email: data.email || '',
-          role: data.role || 'user',
-          schedule: data.schedule || []
-        });
-      });
-      
-      setUsers(usersList);
-      setLoading(false);
-    } catch (error) {
-      console.error('B\u0142\u0105d \u0142adowania u\u017cytkownik\u00f3w:', error);
-      setLoading(false);
-    }
+  const avgHoursPerUser = totalUsers > 0 ? (totalHours / totalUsers).toFixed(1) : '0.0';
+
+  const handleUserClick = (user: User) => {
+    setSelectedUser(selectedUser?.id === user.id ? null : user);
   };
 
-  const handleUserSelect = (user: User) => {
-    setSelectedUser(user);
-    setEditedSchedule([...user.schedule]);
+  const getUserHours = (user: User) => {
+    if (!user.schedule) return 0;
+    return user.schedule.reduce((sum, item) => {
+      const hours = parseFloat(item.hours) || 0;
+      return sum + hours;
+    }, 0);
   };
 
-  const handleScheduleUpdate = (date: string, updates: Partial<ScheduleItem>) => {
-    setEditedSchedule(prev => 
-      prev.map(item => 
-        item.date === date ? { ...item, ...updates } : item
-      )
-    );  };
-
-  const handleSaveSchedule = async () => {
-    if (!selectedUser) return;
-    
-    setSaving(true);
-    try {
-      const userRef = doc(db, 'users', selectedUser.uid);
-      await updateDoc(userRef, {
-        schedule: editedSchedule
-      });
-      
-      setUsers(prev => prev.map(u => 
-        u.uid === selectedUser.uid 
-          ? { ...u, schedule: editedSchedule }
-          : u
-      ));
-      
-      alert('Grafik zosta\u0142 zaktualizowany!');
-      setSelectedUser(null);
-    } catch (error) {
-      console.error('B\u0142\u0105d zapisu:', error);
-      alert('Wyst\u0105pi\u0142 b\u0142\u0105d podczas zapisywania');
-    } finally {
-      setSaving(false);
-    }
+  const formatDate = (dateString?: string) => {
+    if (!dateString) return 'Nieznana';
+    const date = new Date(dateString);
+    return date.toLocaleDateString('pl-PL', { 
+      year: 'numeric', 
+      month: 'long', 
+      day: 'numeric' 
+    });
   };
-
-  if (loading) {
-    return (
-      <div className="flex items-center justify-center min-h-screen">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
-      </div>
-    );
-  }
-
-  if (selectedUser) {
-    return (
-      <div className="min-h-screen bg-gray-50 pb-20">
-        <div className="bg-white shadow-sm border-b border-gray-200 px-4 py-4 sticky top-0 z-10">
-          <div className="flex items-center justify-between">
-            <button
-              onClick={() => setSelectedUser(null)}
-              className="flex items-center gap-2 text-gray-600 hover:text-gray-900"
-            >
-              <ArrowLeft size={20} />
-              <span>Powr\u00f3t</span>
-            </button>
-            <div className="text-center flex-1">
-              <h2 className="text-lg font-bold text-gray-900">{selectedUser.displayName}</h2>
-              <p className="text-sm text-gray-500">{selectedUser.email}</p>
-            </div>
-            <button
-              onClick={handleSaveSchedule}
-              disabled={saving}
-              className="flex items-center gap-2 bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 disabled:opacity-50"
-            >
-              <Save size={18} />
-              {saving ? 'Zapisuj\u0119...' : 'Zapisz'}
-            </button>
-          </div>
-        </div>
-        <div className="px-4 py-6 space-y-3">
-          {editedSchedule.map((item) => (
-            <ScheduleCard
-              key={item.date}
-              item={item}
-              isOpen={false}
-              onClick={() => {}}
-              onUpdateHours={(hours) => handleScheduleUpdate(item.date, { hoursWorked: hours })}
-              onUpdateNote={(note) => handleScheduleUpdate(item.date, { note })}
-            />
-          ))}
-        </div>
-      </div>
-    );
-  }
 
   return (
-    <div className="min-h-screen bg-gray-50 pb-20">
-      <div className="bg-gradient-to-br from-blue-600 to-indigo-600 text-white px-4 py-8">
-        <button
-          onClick={onBack}
-          className="flex items-center gap-2 mb-4 hover:opacity-80"
-        >
-          <ArrowLeft size={20} />
-          <span>Powr\u00f3t</span>
-        </button>
-        <div className="flex items-center gap-3">
-          <div className="w-12 h-12 bg-white/20 rounded-xl flex items-center justify-center">
-            <Users size={24} />
+    <div className="min-h-screen bg-gradient-to-br from-slate-50 to-blue-50 p-4 md:p-8">
+      <div className="max-w-7xl mx-auto">
+        {/* Header */}
+        <div className="mb-8">
+          <div className="flex items-center justify-between mb-2">
+            <h1 className="text-3xl md:text-4xl font-bold text-gray-900">Panel Administracyjny</h1>
+            <button
+              onClick={() => {
+                setLoading(true);
+                onRefresh();
+                setTimeout(() => setLoading(false), 1000);
+              }}
+              className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+            >
+              <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />
+              Odśwież
+            </button>
           </div>
-          <div>
-            <h1 className="text-2xl font-bold">Panel Admina</h1>
-            <p className="text-blue-100">Zarz\u0105dzaj grafikami pracownik\u00f3w</p>
+          <p className="text-gray-600">Zarządzaj użytkownikami i grafikami pracy</p>
+        </div>
+
+        {/* Statistics Cards */}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
+          <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
+            <div className="flex items-center justify-between mb-2">
+              <h3 className="text-sm font-medium text-gray-600">Wszyscy Użytkownicy</h3>
+              <Users className="w-5 h-5 text-blue-600" />
+            </div>
+            <p className="text-3xl font-bold text-gray-900">{totalUsers}</p>
+            <p className="text-xs text-gray-500 mt-1">Zarejestrowanych</p>
+          </div>
+
+          <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
+            <div className="flex items-center justify-between mb-2">
+              <h3 className="text-sm font-medium text-gray-600">Aktywni Użytkownicy</h3>
+              <UserCheck className="w-5 h-5 text-green-600" />
+            </div>
+            <p className="text-3xl font-bold text-gray-900">{usersWithSchedules}</p>
+            <p className="text-xs text-gray-500 mt-1">Z grafikiem</p>
+          </div>
+
+          <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
+            <div className="flex items-center justify-between mb-2">
+              <h3 className="text-sm font-medium text-gray-600">Łączne Godziny</h3>
+              <Clock className="w-5 h-5 text-purple-600" />
+            </div>
+            <p className="text-3xl font-bold text-gray-900">{totalHours.toFixed(1)}h</p>
+            <p className="text-xs text-gray-500 mt-1">Wszystkich użytkowników</p>
+          </div>
+
+          <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
+            <div className="flex items-center justify-between mb-2">
+              <h3 className="text-sm font-medium text-gray-600">Średnio</h3>
+              <TrendingUp className="w-5 h-5 text-orange-600" />
+            </div>
+            <p className="text-3xl font-bold text-gray-900">{avgHoursPerUser}h</p>
+            <p className="text-xs text-gray-500 mt-1">Na użytkownika</p>
           </div>
         </div>
-      </div>
-      <div className="px-4 py-6 space-y-3">
-        <h2 className="text-sm font-semibold text-gray-500 uppercase tracking-wide mb-4">
-          U\u017cytkownicy ({users.length})
-        </h2>
-        {users.map((user) => (
-          <button
-            key={user.uid}
-            onClick={() => handleUserSelect(user)}
-            className="w-full bg-white rounded-xl p-4 shadow-sm border border-gray-100 hover:shadow-md transition-shadow text-left"
-          >
-            <div className="flex items-center justify-between">
-              <div>
-                <h3 className="font-semibold text-gray-900">{user.displayName}</h3>
-                <p className="text-sm text-gray-500">{user.email}</p>
+
+        {/* Users List */}
+        <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
+          <div className="px-6 py-4 border-b border-gray-100 bg-gray-50">
+            <h2 className="text-xl font-semibold text-gray-900 flex items-center gap-2">
+              <Users className="w-5 h-5" />
+              Lista Użytkowników
+            </h2>
+          </div>
+
+          <div className="divide-y divide-gray-100">
+            {allUsers.length === 0 ? (
+              <div className="p-8 text-center text-gray-500">
+                <Users className="w-12 h-12 mx-auto mb-3 text-gray-400" />
+                <p>Brak użytkowników w systemie</p>
               </div>
-              <div className="flex items-center gap-2">
-                <span className={`px-3 py-1 rounded-full text-xs font-medium ${
-                  user.role === 'admin' ? 'bg-purple-100 text-purple-700' : 'bg-gray-100 text-gray-700'
-                }`}>
-                  {user.role === 'admin' ? 'Admin' : 'Pracownik'}
-                </span>
-              </div>
-            </div>
-          </button>
-        ))}
+            ) : (
+              allUsers.map((user) => {
+                const userHours = getUserHours(user);
+                const scheduleCount = user.schedule?.length || 0;
+                const isExpanded = selectedUser?.id === user.id;
+
+                return (
+                  <div key={user.id} className="transition-colors hover:bg-gray-50">
+                    <div
+                      className="px-6 py-4 cursor-pointer"
+                      onClick={() => handleUserClick(user)}
+                    >
+                      <div className="flex items-center justify-between">
+                        <div className="flex-1">
+                          <div className="flex items-center gap-3 mb-1">
+                            <div className="w-10 h-10 rounded-full bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center text-white font-bold">
+                              {user.email?.charAt(0).toUpperCase() || 'U'}
+                            </div>
+                            <div>
+                              <h3 className="font-semibold text-gray-900">{user.email}</h3>
+                              <p className="text-xs text-gray-500">Dołączył: {formatDate(user.createdAt)}</p>
+                            </div>
+                          </div>
+                        </div>
+                        <div className="flex items-center gap-6">
+                          <div className="text-right">
+                            <p className="text-sm font-medium text-gray-600">{scheduleCount} zmian</p>
+                            <p className="text-xs text-gray-500">{userHours.toFixed(1)}h łącznie</p>
+                          </div>
+                          <button
+                            className="p-2 hover:bg-blue-50 rounded-lg transition-colors"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleUserClick(user);
+                            }}
+                          >
+                            <Edit className="w-4 h-4 text-gray-600" />
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Expanded User Details */}
+                    {isExpanded && (
+                      <div className="px-6 py-4 bg-gray-50 border-t border-gray-100">
+                        <h4 className="font-semibold text-gray-900 mb-3 flex items-center gap-2">
+                          <Calendar className="w-4 h-4" />
+                          Grafik Pracy
+                        </h4>
+                        {scheduleCount === 0 ? (
+                          <p className="text-sm text-gray-500 italic">Brak zaplanowanych zmian</p>
+                        ) : (
+                          <div className="space-y-2">
+                            {user.schedule?.map((item, index) => (
+                              <div
+                                key={index}
+                                className="bg-white rounded-lg p-3 shadow-sm border border-gray-100 flex items-center justify-between"
+                              >
+                                <div>
+                                  <p className="font-medium text-gray-900">{item.date}</p>
+                                  <p className="text-sm text-gray-600">{item.time}</p>
+                                </div>
+                                <div className="text-right">
+                                  <p className="font-semibold text-blue-600">{item.hours}h</p>
+                                  <p className="text-xs text-gray-500">{item.location}</p>
+                                </div>
+                              </div>
+                            ))}
+                          </div>
+                        )}
+                      </div>
+                    )}
+                  </div>
+                );
+              })
+            )}
+          </div>
+        </div>
+
+        {/* Footer Info */}
+        <div className="mt-8 text-center text-sm text-gray-500">
+          <p>System zarządzania grafikiem pracy - Wersja 2.3 (Multi-User)</p>
+        </div>
       </div>
     </div>
   );
