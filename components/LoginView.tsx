@@ -1,21 +1,29 @@
 import React, { useState } from 'react';
-import { signInWithPopup } from 'firebase/auth';
-import { auth, googleProvider } from '../firebase';
-import { Lock, ArrowRight } from 'lucide-react';
+import { signInWithEmailAndPassword } from 'firebase/auth';
+import { auth } from '../firebase';
+import { Lock, Mail } from 'lucide-react';
 
 const LoginView: React.FC = () => {
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const handleLogin = async () => {
+  const handleLogin = async (e: React.FormEvent) => {
+    e.preventDefault();
     setLoading(true);
     setError(null);
+    
     try {
-      await signInWithPopup(auth, googleProvider);
+      await signInWithEmailAndPassword(auth, email, password);
       // Auth state listener in App.tsx will handle the rest
     } catch (err: any) {
       console.error(err);
-      setError("Wystąpił błąd podczas logowania. Sprawdź konfigurację Firebase lub spróbuj ponownie.");
+      if (err.code === 'auth/invalid-credential' || err.code === 'auth/user-not-found' || err.code === 'auth/wrong-password') {
+        setError('Nieprawidłowy email lub hasło');
+      } else {
+        setError('Wystąpił błąd podczas logowania');
+      }
       setLoading(false);
     }
   };
@@ -46,31 +54,53 @@ const LoginView: React.FC = () => {
         
         <h2 className="text-lg font-bold text-gray-800 mb-2">Zaloguj się</h2>
         <p className="text-sm text-gray-400 mb-6 leading-relaxed">
-          Aby uzyskać dostęp do swojego grafiku i zapisywać zmiany w chmurze.
+          Wprowadź swój email i hasło
         </p>
 
-        <button
-          onClick={handleLogin}
-          disabled={loading}
-          className="w-full bg-gray-900 hover:bg-gray-800 text-white font-bold py-4 px-6 rounded-xl transition-all active:scale-95 disabled:opacity-70 disabled:cursor-not-allowed flex items-center justify-center gap-3 shadow-lg group"
-        >
-          {loading ? (
-            <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-          ) : (
-            <>
-              <img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg" className="w-5 h-5" alt="G" />
-              <span>Kontynuuj z Google</span>
-              <ArrowRight size={16} className="opacity-0 group-hover:opacity-100 group-hover:translate-x-1 transition-all" />
-            </>
-          )}
-        </button>
+        <form onSubmit={handleLogin} className="space-y-4">
+          <div className="relative">
+            <Mail className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" size={18} />
+            <input
+              type="email"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              placeholder="Email"
+              required
+              className="w-full pl-10 pr-4 py-3 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
+            />
+          </div>
+
+          <div className="relative">
+            <Lock className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" size={18} />
+            <input
+              type="password"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              placeholder="Hasło"
+              required
+              className="w-full pl-10 pr-4 py-3 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
+            />
+          </div>
+
+          <button
+            type="submit"
+            disabled={loading}
+            className="w-full bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white font-bold py-4 px-6 rounded-xl transition-all active:scale-95 disabled:opacity-70 disabled:cursor-not-allowed flex items-center justify-center gap-3 shadow-lg"
+          >
+            {loading ? (
+              <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+            ) : (
+              'Zaloguj się'
+            )}
+          </button>
+        </form>
 
         {error && (
           <p className="mt-4 text-xs font-bold text-rose-500 bg-rose-50 p-2 rounded-lg">{error}</p>
         )}
       </div>
 
-      <p className="mt-8 text-[10px] text-gray-300">Wersja v2.0 (Cloud)</p>
+      <p className="mt-8 text-[10px] text-gray-300">Wersja v2.1 (Email/Password)</p>
     </div>
   );
 };
