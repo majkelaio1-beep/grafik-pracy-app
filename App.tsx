@@ -150,7 +150,10 @@ const App: React.FC = () => {
     }
 
     if (activeTab === 'profile') {
-      return <ProfileView totalHours={totalHoursWorked} schedule={schedule} />;
+      if (isAdmin) {
+      return <AdminDashboard onBack={() => setActiveTab('home')} />;
+    }
+    return <ProfileView totalHours={totalHoursWorked} schedule={schedule} />;
     }
     
     // Default Home View (List)
