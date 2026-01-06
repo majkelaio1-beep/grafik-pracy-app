@@ -7,7 +7,7 @@ interface BottomNavProps {
   onAdminClick?: () => void;
 }
 
-const BottomNav: React.FC<BottomNav= ({ activeTab, onTabChange, isAdmin, onAdminClick }) => {
+const BottomNav: React.FC<BottomNavProps>  = ({ activeTab, onTabChange, isAdmin, onAdminClick }) => {
   const navItems = [
     { id: 'home', icon: Home, label: 'Start' },
     { id: 'calendar', icon: CalendarDays, label: 'Grafik' },
