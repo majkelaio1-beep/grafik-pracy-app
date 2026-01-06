@@ -19,12 +19,8 @@ const LoginView: React.FC = () => {
       // Auth state listener in App.tsx will handle the rest
     } catch (err: any) {
       console.error(err);
-      if (err.code === 'auth/invalid-credential' || err.code === 'auth/user-not-found' || err.code === 'auth/wrong-password') {
-        setError('Nieprawidłowy email lub hasło');
-      } else {
-        setError('Wystąpił błąd podczas logowania');
-      }
-      setLoading(false);
+      setError(`Error: ${err.code || 'unknown'} - ${err.message || 'No message'}`);        setError('Nieprawidłowy email lub hasło');
+              setLoading(false);      
     }
   };
 
