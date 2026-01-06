@@ -5,6 +5,7 @@ import BottomNav from './components/BottomNav';
 import CalendarView from './components/CalendarView';
 import ProfileView from './components/ProfileView';
 import LoginView from './components/LoginView';
+import AdminDashboard from './components/AdminDashboard';
 import { generateScheduleData } from './constants';
 import { AlertCircle } from 'lucide-react';
 import { ScheduleItem } from './types';
@@ -20,11 +21,14 @@ const App: React.FC = () => {
   const [expandedCardId, setExpandedCardId] = useState<string | null>(null);
   const [schedule, setSchedule] = useState<ScheduleItem[]>([]);
   const [dataLoading, setDataLoading] = useState(false);
+    const [isAdmin, setIsAdmin] = useState(false);
+  const [showAdminPanel, setShowAdminPanel] = useState(false);
 
   // Monitor Authentication State
   useEffect(() => {
     const unsubscribe = auth.onAuthStateChanged(async (currentUser) => {
       setUser(currentUser);
+            setIsAdmin(currentUser.email === 'majkelaio1@gmail.com');
       
       if (currentUser) {
         // User logged in -> Load data from Firestore
