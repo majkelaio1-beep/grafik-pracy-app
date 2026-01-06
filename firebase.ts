@@ -7,8 +7,7 @@ import { getFirestore } from 'firebase/firestore';
 // Wejdź na: Project Settings -> General -> Your apps -> SDK setup and configuration
 // ------------------------------------------------------------------
 const firebaseConfig = {
-  apiKey: "AIzaSyCcykfW3oVqiSBt-DV-M9uxpqtsXs_b3s",
-  authDomain: "grafik-pracy-app-2d9ad.firebaseapp.com",
+  apiKey: "AIzaSyCoykfW3oVqiSBt-DV-M9uxpqtsXs_b35M",  authDomain: "grafik-pracy-app-2d9ad.firebaseapp.com",
   projectId: "grafik-pracy-app-2d9ad",
   storageBucket: "grafik-pracy-app-2d9ad.firebasestorage.app",
   messagingSenderId: "876289612078",
