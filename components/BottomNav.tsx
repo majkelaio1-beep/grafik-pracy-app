@@ -1,20 +1,29 @@
 import React from 'react';
-import { Home, CalendarDays, Bell, User } from 'lucide-react';
-
+import { Home, CalendarDays, Bell, User, Users } from 'lucide-react';
 interface BottomNavProps {
   activeTab: string;
   onTabChange: (tab: string) => void;
+    isAdmin?: boolean;
+  onAdminClick?: () => void;
 }
 
-const BottomNav: React.FC<BottomNavProps> = ({ activeTab, onTabChange }) => {
+const BottomNav: React.FC<BottomNav= ({ activeTab, onTabChange, isAdmin, onAdminClick }) => {
   const navItems = [
     { id: 'home', icon: Home, label: 'Start' },
     { id: 'calendar', icon: CalendarDays, label: 'Grafik' },
-    { id: 'alerts', icon: Bell, label: 'Alerty' },
+        ...(isAdmin ? [{ id: 'admin', icon: Users, label: 'Admin' }] : []),
     { id: 'profile', icon: User, label: 'Profil' },
   ];
 
   const activeIndex = navItems.findIndex(item => item.id === activeTab);
+
+    const handleTabClick = (tabId: string) => {
+    if (tabId === 'admin' && onAdminClick) {
+      onAdminClick();
+    } else {
+      onTabChange(tabId);
+    }
+  };
 
   return (
     <div className="bg-white/90 backdrop-blur-xl border-t border-gray-100 px-4 pt-2 pb-safe shadow-[0_-10px_40px_-15px_rgba(0,0,0,0.05)] z-50 w-full">
@@ -38,7 +47,7 @@ const BottomNav: React.FC<BottomNavProps> = ({ activeTab, onTabChange }) => {
           return (
             <button
               key={item.id}
-              onClick={() => onTabChange(item.id)}
+              onClick={() => handleTabClick(item.id)}
               className="group relative flex flex-col items-center justify-center h-16 rounded-2xl transition-all duration-200 active:scale-95 z-10"
             >
               <div className={`
